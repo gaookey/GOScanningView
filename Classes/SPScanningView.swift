@@ -77,9 +77,9 @@ public class SPScanningView: UIView {
     }
     
     ///原始底图
-    lazy var originalImageView = UIImageView(frame: bounds)
+    public lazy var originalImageView = UIImageView(frame: bounds)
     ///裁剪图
-    lazy var clipImageView = UIImageView(frame: bounds)
+    public lazy var clipImageView = UIImageView(frame: bounds)
     
     ///扫尾图片
     private lazy var gradientImageView: UIImageView = {
@@ -105,7 +105,7 @@ public class SPScanningView: UIView {
     private var isCompletion = true
     private var presentationLink: CADisplayLink?
     
-    init(frame: CGRect, modeType: ScanModeType = .upDown, speedType: ScanSpeedType = .linear, originalImage: UIImage = UIImage(), clipImage: UIImage = UIImage()) {
+    public init(frame: CGRect, modeType: ScanModeType = .upDown, speedType: ScanSpeedType = .linear, originalImage: UIImage = UIImage(), clipImage: UIImage = UIImage()) {
         super.init(frame: frame)
         
         layer.masksToBounds = true

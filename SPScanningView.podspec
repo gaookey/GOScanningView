@@ -1,7 +1,7 @@
 Pod::Spec.new do |spec|
  
   spec.name                   = 'SPScanningView'
-  spec.version                = '0.0.3'
+  spec.version                = '0.0.5'
   spec.summary                = 'A simple scan and crop view.'
   spec.homepage               = 'https://mouos.com'
   spec.license                = { :type => 'MIT', :file => 'LICENSE' }
