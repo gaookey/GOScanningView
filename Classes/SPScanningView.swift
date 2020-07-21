@@ -34,7 +34,7 @@ public enum ScanModeType: Int {
 
 public class SPScanningView: UIView {
     
-    ///非循环时单次完成
+    ///完成
     public var completionHandler: (() -> ())?
     ///达到设定预设值
     public var noteValueHandler: (() -> ())?
@@ -58,15 +58,6 @@ public class SPScanningView: UIView {
         }
     }
     
-    ///扫尾图
-    public var gradientImage: UIImage? {
-        willSet {
-            if let image = newValue {
-                gradientImageView.image = image
-            }
-        }
-    }
-    
     ///底图
     public var originalImage: UIImage? {
         willSet {
@@ -81,8 +72,8 @@ public class SPScanningView: UIView {
     ///裁剪图
     public lazy var clipImageView = UIImageView(frame: bounds)
     
-    ///扫尾图片
-    private lazy var gradientImageView: UIImageView = {
+    ///扫尾图
+    public lazy var gradientImageView: UIImageView = {
         let image = UIImageView(frame: bounds)
         image.backgroundColor = .lightGray
         return image
@@ -394,11 +385,12 @@ extension SPScanningView: CAAnimationDelegate {
             clipImageView.image = originalImageView.image
         }
         
+        if let handler = completionHandler {
+            handler()
+        }
+        
         guard isCycle else {
             stopScan()
-            if let handler = completionHandler {
-                handler()
-            }
             return
         }
         
