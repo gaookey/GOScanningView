@@ -88,13 +88,14 @@ public class SPScanningView: UIView {
     ///   - isCycle: 是否循环/单次，默认true
     ///   - modeType: 扫描方向，默认upDown
     ///   - speedType: 扫描速度，默认linear
+    ///   - gradientImageView: 扫尾图
     ///   - originalImage: 底图
     ///   - clipImage: 裁剪时，待裁剪图
     ///   - gradientSize: 扫尾大小，默认5
     ///   - duration: 扫描时间，默认1.5
     ///   - middleValue: 仅 ScanSpeedType 为 easeInEaseOut 或 easeInEaseOutReverse 时生效。默认中间位置
     ///   - noteValue: 预设通知值。扫描位置达到预设值时回调函数 noteValueHandler:
-    public init(frame: CGRect, isCycle: Bool = true, modeType: ScanModeType = .upDown, speedType: ScanSpeedType = .linear, originalImage: UIImage = UIImage(), clipImage: UIImage = UIImage(), gradientSize: CGFloat = 5, duration: CGFloat = 1.5, middleValue: CGFloat = 0, noteValue: CGFloat = 100000) {
+    public init(frame: CGRect, isCycle: Bool = true, modeType: ScanModeType = .upDown, speedType: ScanSpeedType = .linear, gradientImage: UIImage = UIImage(), originalImage: UIImage = UIImage(), clipImage: UIImage = UIImage(), gradientSize: CGFloat = 5, duration: CGFloat = 1.5, middleValue: CGFloat = 0, noteValue: CGFloat = 100000) {
         super.init(frame: frame)
         
         layer.masksToBounds = true
@@ -102,6 +103,10 @@ public class SPScanningView: UIView {
         self.isCycle = isCycle
         self.modeType = modeType
         self.speedType = speedType
+        self.gradientImageView.image = gradientImage
+        if gradientImage.size != .zero {
+            self.gradientImageView.backgroundColor = .clear
+        }
         self.originalImageView.image = originalImage
         self.clipImageView.image = clipImage
         self.gradientSize = gradientSize
