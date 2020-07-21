@@ -34,32 +34,13 @@ public enum ScanModeType: Int {
 
 public class SPScanningView: UIView {
     
-    ///完成
+    ///完成回调。循环时多次执行，完成一次扫描执行一次
     public var completionHandler: (() -> ())?
-    ///达到设定预设值
+    ///达到设定预设值回调
     public var noteValueHandler: (() -> ())?
     
-    ///预设通知值
-    public var noteValue: CGFloat = 100000
-    ///动画时间
-    public var duration: CGFloat = 1.5
-    ///是否循环
-    public var isCycle = true
-    ///仅 ScanSpeedType 为 easeInEaseOut 或 easeInEaseOutReverse 时生效。默认中间
-    public var middleValue: CGFloat = 0 {
-        didSet {
-            configAttribute()
-        }
-    }
-    ///扫尾的大小，默认5
-    public var gradientSize: CGFloat = 5 {
-        didSet {
-            configAttribute()
-        }
-    }
-    
-    ///底图
-    public var originalImage: UIImage? {
+    ///循环裁剪时每次赋值刷新
+    public var refreshImage: UIImage? {
         willSet {
             if let image = newValue, isCompletion {
                 originalImageView.image = image
@@ -71,7 +52,6 @@ public class SPScanningView: UIView {
     public lazy var originalImageView = UIImageView(frame: bounds)
     ///裁剪图
     public lazy var clipImageView = UIImageView(frame: bounds)
-    
     ///扫尾图
     public lazy var gradientImageView: UIImageView = {
         let image = UIImageView(frame: bounds)
@@ -95,16 +75,39 @@ public class SPScanningView: UIView {
     private var isClip: Bool = false
     private var isCompletion = true
     private var presentationLink: CADisplayLink?
+    private var noteValue: CGFloat = 100000
+    private var duration: CGFloat = 1.5
+    private var isCycle = true
+    private var middleValue: CGFloat = 0
+    private var gradientSize: CGFloat = 5
     
-    public init(frame: CGRect, modeType: ScanModeType = .upDown, speedType: ScanSpeedType = .linear, originalImage: UIImage = UIImage(), clipImage: UIImage = UIImage()) {
+    
+    /// 创建ScanningView
+    /// - Parameters:
+    ///   - frame: frame
+    ///   - isCycle: 是否循环/单次，默认true
+    ///   - modeType: 扫描方向，默认upDown
+    ///   - speedType: 扫描速度，默认linear
+    ///   - originalImage: 底图
+    ///   - clipImage: 裁剪时，待裁剪图
+    ///   - gradientSize: 扫尾大小，默认5
+    ///   - duration: 扫描时间，默认1.5
+    ///   - middleValue: 仅 ScanSpeedType 为 easeInEaseOut 或 easeInEaseOutReverse 时生效。默认中间位置
+    ///   - noteValue: 预设通知值。扫描位置达到预设值时回调函数 noteValueHandler:
+    public init(frame: CGRect, isCycle: Bool = true, modeType: ScanModeType = .upDown, speedType: ScanSpeedType = .linear, originalImage: UIImage = UIImage(), clipImage: UIImage = UIImage(), gradientSize: CGFloat = 5, duration: CGFloat = 1.5, middleValue: CGFloat = 0, noteValue: CGFloat = 100000) {
         super.init(frame: frame)
         
         layer.masksToBounds = true
         
+        self.isCycle = isCycle
         self.modeType = modeType
         self.speedType = speedType
         self.originalImageView.image = originalImage
         self.clipImageView.image = clipImage
+        self.gradientSize = gradientSize
+        self.duration = duration
+        self.middleValue = middleValue
+        self.noteValue = noteValue
         
         configAttribute()
         
@@ -147,7 +150,8 @@ public class SPScanningView: UIView {
 // MARK: - scan
 extension SPScanningView {
     
-    ///开始动画
+    /// 开始动画
+    /// - Parameter isClip: 是否裁剪。裁剪现仅支持 linear 状态
     public func startScan(isClip: Bool = false) {
         guard (gradientImageView.layer.animationKeys()?.count) == nil && (clipView.layer.animationKeys()?.count) == nil else { return }
         
@@ -155,6 +159,9 @@ extension SPScanningView {
         presentationLink = CADisplayLink(target: self, selector: #selector(presentationLinkAction))
         presentationLink?.add(to: RunLoop.current, forMode: .default)
         
+        if isClip {
+            self.speedType = .linear
+        }
         self.isClip = isClip
         isCompletion = false
         startScan(fromValue, toValue)
@@ -239,6 +246,7 @@ extension SPScanningView {
 extension SPScanningView {
     
     func startClip() {
+        
         var originValues = [CGFloat]()
         var sizeValues = [CGFloat]()
         var pointValues = [CGFloat]()
@@ -251,12 +259,12 @@ extension SPScanningView {
             if speedType == .linear {
                 if isReversed {
                     originValues = [0]
-                    sizeValues = getValues(min: 0, max: bounds.height, isReversed: true, temp: 0)
-                    pointValues = sizeValues.map{ $0 * 0.5 }
+                    sizeValues = getValues(min: -gradientSize, max: bounds.height, isReversed: true, temp: 0)
+                    pointValues = getValues(min: -gradientSize / 2.0, max: bounds.height / 2.0, isReversed: true, temp: 0)
                 } else {
-                    originValues = getValues(min: 0, max: bounds.height, temp: 0)
+                    originValues = getValues(min: 0, max: bounds.height + gradientSize, temp: 0)
                     sizeValues = getValues(min: 0, max: bounds.height, isReversed: true, temp: 0)
-                    pointValues = getValues(min: bounds.height / 2.0, max: bounds.height, temp: 0)
+                    pointValues = getValues(min: bounds.height / 2.0, max: bounds.height + gradientSize, temp: 0)
                 }
                 
                 originKeyPath = "bounds.origin.y"
@@ -274,13 +282,13 @@ extension SPScanningView {
         } else if modeType == .downUp {
             if speedType == .linear {
                 if isReversed {
-                    originValues = getValues(min: 0, max: bounds.height, temp: 0)
+                    originValues = getValues(min: 0, max: bounds.height + gradientSize, temp: 0)
                     sizeValues = getValues(min: 0, max: bounds.height, isReversed: true, temp: 0)
-                    pointValues = getValues(min: bounds.height / 2.0, max: bounds.height, temp: 0)
+                    pointValues = getValues(min: bounds.height / 2.0, max: bounds.height + gradientSize, temp: 0)
                 } else {
                     originValues = [0]
-                    sizeValues = getValues(min: 0, max: bounds.height, isReversed: true, temp: 0)
-                    pointValues = sizeValues.map{ $0 * 0.5 }
+                    sizeValues = getValues(min: -gradientSize, max: bounds.height, isReversed: true, temp: 0)
+                    pointValues = getValues(min: -gradientSize / 2.0, max: bounds.height / 2.0, isReversed: true, temp: 0)
                 }
                 
                 originKeyPath = "bounds.origin.y"
@@ -299,12 +307,12 @@ extension SPScanningView {
             if speedType == .linear {
                 if isReversed {
                     originValues = [0]
-                    sizeValues = getValues(min: 0, max: bounds.width, isReversed: true, temp: 0)
-                    pointValues = sizeValues.map{ $0 * 0.5 }
+                    sizeValues = getValues(min: -gradientSize, max: bounds.width, isReversed: true, temp: 0)
+                    pointValues = getValues(min: -gradientSize / 2.0, max: bounds.width / 2.0, isReversed: true, temp: 0)
                 } else {
-                    originValues = getValues(min: 0, max: bounds.width, temp: 0)
+                    originValues = getValues(min: 0, max: bounds.width + gradientSize, temp: 0)
                     sizeValues = getValues(min: 0, max: bounds.width, isReversed: true, temp: 0)
-                    pointValues = getValues(min: bounds.width / 2.0, max: bounds.width, temp: 0)
+                    pointValues = getValues(min: bounds.width / 2.0, max: bounds.width + gradientSize, temp: 0)
                 }
                 
                 originKeyPath = "bounds.origin.x"
@@ -322,13 +330,13 @@ extension SPScanningView {
         } else if modeType == .rightLeft {
             if speedType == .linear {
                 if isReversed {
-                    originValues = getValues(min: 0, max: bounds.width, temp: 0)
+                    originValues = getValues(min: 0, max: bounds.width + gradientSize, temp: 0)
                     sizeValues = getValues(min: 0, max: bounds.width, isReversed: true, temp: 0)
-                    pointValues = getValues(min: bounds.width / 2.0, max: bounds.width, temp: 0)
+                    pointValues = getValues(min: bounds.width / 2.0, max: bounds.width + gradientSize, temp: 0)
                 } else {
                     originValues = [0]
-                    sizeValues = getValues(min: 0, max: bounds.width, isReversed: true, temp: 0)
-                    pointValues = sizeValues.map{ $0 * 0.5 }
+                    sizeValues = getValues(min: -gradientSize, max: bounds.width, isReversed: true, temp: 0)
+                    pointValues = getValues(min: -gradientSize / 2.0, max: bounds.width / 2.0, isReversed: true, temp: 0)
                 }
                 
                 originKeyPath = "bounds.origin.x"
@@ -357,16 +365,16 @@ extension SPScanningView {
         sizeAnim.keyPath = sizeKeyPath
         sizeAnim.duration = CFTimeInterval(duration)
         sizeAnim.values = sizeValues
-        originAmin.fillMode = .forwards
-        originAmin.isRemovedOnCompletion = false
+        sizeAnim.fillMode = .forwards
+        sizeAnim.isRemovedOnCompletion = false
         clipView.layer.add(sizeAnim, forKey: "clipSize")
         
         let pointAnim = CAKeyframeAnimation()
         pointAnim.keyPath = pointKeyPath
         pointAnim.duration = CFTimeInterval(duration)
         pointAnim.values = pointValues
-        originAmin.fillMode = .forwards
-        originAmin.isRemovedOnCompletion = false
+        pointAnim.fillMode = .forwards
+        pointAnim.isRemovedOnCompletion = false
         clipView.layer.add(pointAnim, forKey: "clipPoint")
     }
 }
@@ -381,6 +389,7 @@ extension SPScanningView: CAAnimationDelegate {
         }
         
         isCompletion = true
+        
         if isClip {
             clipImageView.image = originalImageView.image
         }
