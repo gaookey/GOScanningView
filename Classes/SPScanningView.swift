@@ -8,7 +8,7 @@
 
 import UIKit
 
-public enum ScanSpeedType: Int {
+public enum SPScanSpeedType: Int {
     ///匀速
     case linear
     ///加速
@@ -21,7 +21,7 @@ public enum ScanSpeedType: Int {
     case easeInEaseOutReverse
 }
 
-public enum ScanModeType: Int {
+public enum SPScanModeType: Int {
     ///上->下
     case upDown
     ///下->上
@@ -49,13 +49,23 @@ public class SPScanningView: UIView {
     }
     
     ///原始底图
-    public lazy var originalImageView = UIImageView(frame: bounds)
+    private lazy var originalImageView: UIImageView = {
+        let image = UIImageView(frame: bounds)
+        image.contentMode = .scaleAspectFill
+        return image
+    }()
     ///裁剪图
-    public lazy var clipImageView = UIImageView(frame: bounds)
+    private lazy var clipImageView: UIImageView = {
+        let image = UIImageView(frame: bounds)
+        image.contentMode = .scaleAspectFill
+        return image
+    }()
     ///扫尾图
     public lazy var gradientImageView: UIImageView = {
         let image = UIImageView(frame: bounds)
         image.backgroundColor = .lightGray
+        image.contentMode = .scaleAspectFill
+        image.layer.masksToBounds = true
         return image
     }()
     
@@ -68,8 +78,8 @@ public class SPScanningView: UIView {
     
     private var fromValue: CGFloat = 0
     private var toValue: CGFloat = 0
-    private var speedType: ScanSpeedType = .linear
-    private var modeType: ScanModeType = .upDown
+    private var speedType: SPScanSpeedType = .linear
+    private var modeType: SPScanModeType = .upDown
     private var isReversed = false
     private var speedTypeMiddleValue: CGFloat = 0
     private var isClip: Bool = false
@@ -95,7 +105,7 @@ public class SPScanningView: UIView {
     ///   - duration: 扫描时间，默认1.5
     ///   - middleValue: 仅 ScanSpeedType 为 easeInEaseOut 或 easeInEaseOutReverse 时生效。默认中间位置
     ///   - noteValue: 预设通知值。扫描位置达到预设值时回调函数 noteValueHandler:
-    public init(frame: CGRect, isCycle: Bool = true, modeType: ScanModeType = .upDown, speedType: ScanSpeedType = .linear, gradientImage: UIImage = UIImage(), originalImage: UIImage = UIImage(), clipImage: UIImage = UIImage(), gradientSize: CGFloat = 5, duration: CGFloat = 1.5, middleValue: CGFloat = 0, noteValue: CGFloat = 100000) {
+    public init(frame: CGRect, isCycle: Bool = true, modeType: SPScanModeType = .upDown, speedType: SPScanSpeedType = .linear, gradientImage: UIImage = UIImage(), originalImage: UIImage = UIImage(), clipImage: UIImage = UIImage(), gradientSize: CGFloat = 5, duration: CGFloat = 1.5, middleValue: CGFloat = 0, noteValue: CGFloat = 100000) {
         super.init(frame: frame)
         
         layer.masksToBounds = true
@@ -126,7 +136,7 @@ public class SPScanningView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func configAttribute() {
+    private func configAttribute() {
         switch modeType {
         case .upDown:
             fromValue = -gradientSize * 0.5
@@ -203,6 +213,9 @@ extension SPScanningView {
         let timeSincePause = layer.convertTime(CACurrentMediaTime(), from: nil) - pausedTime
         layer.beginTime = timeSincePause
     }
+}
+
+extension SPScanningView {
     
     private func startScan(_ from: CGFloat, _ to: CGFloat) {
         
@@ -223,7 +236,7 @@ extension SPScanningView {
         }
     }
     
-    @objc func presentationLinkAction() {
+    @objc private func presentationLinkAction() {
         
         guard let frame = gradientImageView.layer.presentation()?.frame else {
             return
@@ -250,7 +263,7 @@ extension SPScanningView {
 // MARK:  - clip
 extension SPScanningView {
     
-    func startClip() {
+    private func startClip() {
         
         var originValues = [CGFloat]()
         var sizeValues = [CGFloat]()
