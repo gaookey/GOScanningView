@@ -32,12 +32,20 @@ public enum SPScanModeType: Int {
     case rightLeft
 }
 
-public class SPScanningView: UIView {
+public protocol SPScanningViewDelegate: NSObjectProtocol {
+    func didCompletion(view: SPScanningView, isReversed: Bool)
+    func didChangeValue(view: SPScanningView, value: CGFloat)
+    func didNoteValue(view: SPScanningView, value: CGFloat)
+}
+public extension SPScanningViewDelegate {
+    func didCompletion(view: SPScanningView, isReversed: Bool) { }
+    func didChangeValue(view: SPScanningView, value: CGFloat) { }
+    func didNoteValue(view: SPScanningView, value: CGFloat) { }
+}
+
+public class SPScanningView: UIView, SPScanningViewDelegate {
     
-    ///完成回调。循环时多次执行，完成一次扫描执行一次
-    public var completionHandler: (() -> ())?
-    ///达到设定预设值回调
-    public var noteValueHandler: (() -> ())?
+    weak open var delegate: SPScanningViewDelegate?
     
     ///循环裁剪时每次赋值刷新
     public var refreshImage: UIImage? {
@@ -47,15 +55,14 @@ public class SPScanningView: UIView {
             }
         }
     }
-    
     ///原始底图
-    private lazy var originalImageView: UIImageView = {
+    public lazy var originalImageView: UIImageView = {
         let image = UIImageView(frame: bounds)
         image.contentMode = .scaleAspectFill
         return image
     }()
     ///裁剪图
-    private lazy var clipImageView: UIImageView = {
+    public lazy var clipImageView: UIImageView = {
         let image = UIImageView(frame: bounds)
         image.contentMode = .scaleAspectFill
         return image
@@ -85,12 +92,11 @@ public class SPScanningView: UIView {
     private var isClip: Bool = false
     private var isCompletion = true
     private var presentationLink: CADisplayLink?
-    private var noteValue: CGFloat = 100000
+    private var noteValue: CGFloat = 1
     private var duration: CGFloat = 1.5
     private var isCycle = true
     private var middleValue: CGFloat = 0
     private var gradientSize: CGFloat = 5
-    
     
     /// 创建ScanningView
     /// - Parameters:
@@ -104,8 +110,8 @@ public class SPScanningView: UIView {
     ///   - gradientSize: 扫尾大小，默认5
     ///   - duration: 扫描时间，默认1.5
     ///   - middleValue: 仅 ScanSpeedType 为 easeInEaseOut 或 easeInEaseOutReverse 时生效。默认中间位置
-    ///   - noteValue: 预设通知值。扫描位置达到预设值时回调函数 noteValueHandler:
-    public init(frame: CGRect, isCycle: Bool = true, modeType: SPScanModeType = .upDown, speedType: SPScanSpeedType = .linear, gradientImage: UIImage = UIImage(), originalImage: UIImage = UIImage(), clipImage: UIImage = UIImage(), gradientSize: CGFloat = 5, duration: CGFloat = 1.5, middleValue: CGFloat = 0, noteValue: CGFloat = 100000) {
+    ///   - noteValue: 预设通知值 0~1。扫描位置达到预设值时执行代理didNoteValue
+    public init(frame: CGRect, isCycle: Bool = true, modeType: SPScanModeType = .upDown, speedType: SPScanSpeedType = .linear, gradientImage: UIImage = UIImage(), originalImage: UIImage = UIImage(), clipImage: UIImage = UIImage(), gradientSize: CGFloat = 5, duration: CGFloat = 1.5, middleValue: CGFloat = 0, noteValue: CGFloat = 1) {
         super.init(frame: frame)
         
         layer.masksToBounds = true
@@ -190,6 +196,7 @@ extension SPScanningView {
         gradientImageView.layer.removeAllAnimations()
         clipView.transform = CGAffineTransform.identity
         clipView.layer.removeAllAnimations()
+        presentationLink?.invalidate()
     }
     ///暂停动画
     public func pauseScan() {
@@ -243,18 +250,27 @@ extension SPScanningView {
         }
         
         var value: CGFloat = 0
-        
+        var note: CGFloat = 0
         switch modeType {
         case .upDown, .downUp:
             value = frame.origin.y
+            note = noteValue * bounds.height
         case .leftRight, .rightLeft:
             value = frame.origin.x
+            note = noteValue * bounds.width
         }
         
-        if value >= noteValue {
-            if let handler = noteValueHandler {
+        delegate?.didChangeValue(view: self, value: value)
+        
+        if modeType == .upDown || modeType == .leftRight {
+            if value >= note {
+                delegate?.didNoteValue(view: self, value: note)
                 presentationLink?.invalidate()
-                handler()
+            }
+        } else if modeType == .downUp || modeType == .rightLeft {
+            if value <= note {
+                delegate?.didNoteValue(view: self, value: note)
+                presentationLink?.invalidate()
             }
         }
     }
@@ -412,9 +428,7 @@ extension SPScanningView: CAAnimationDelegate {
             clipImageView.image = originalImageView.image
         }
         
-        if let handler = completionHandler {
-            handler()
-        }
+        delegate?.didCompletion(view: self, isReversed: isReversed)
         
         guard isCycle else {
             stopScan()
