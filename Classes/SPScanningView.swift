@@ -197,6 +197,9 @@ extension SPScanningView {
         clipView.transform = CGAffineTransform.identity
         clipView.layer.removeAllAnimations()
         presentationLink?.invalidate()
+        layer.speed = 1
+        layer.timeOffset = 0
+        layer.beginTime = 0
     }
     ///暂停动画
     public func pauseScan() {
