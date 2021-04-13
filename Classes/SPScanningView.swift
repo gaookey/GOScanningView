@@ -3,7 +3,6 @@
 //  SPScanningView
 //
 //  Created by 高文立 on 2020/7/16.
-//  Copyright © 2020 mouos. All rights reserved.
 //
 
 import UIKit
@@ -43,7 +42,7 @@ public extension SPScanningViewDelegate {
     func didNoteValue(view: SPScanningView, value: CGFloat) { }
 }
 
-public class SPScanningView: UIView, SPScanningViewDelegate {
+public class SPScanningView: UIView {
     
     weak open var delegate: SPScanningViewDelegate?
     
@@ -188,7 +187,7 @@ extension SPScanningView {
         startScan(fromValue, toValue)
     }
     
-    ///停止动画
+    /// 停止动画
     public func stopScan() {
         isReversed = false
         isCompletion = true
@@ -201,7 +200,7 @@ extension SPScanningView {
         layer.timeOffset = 0
         layer.beginTime = 0
     }
-    ///暂停动画
+    /// 暂停动画
     public func pauseScan() {
         guard layer.speed == 1 && !isCompletion else {
             return
@@ -211,7 +210,7 @@ extension SPScanningView {
         layer.timeOffset = pausedTime
     }
     
-    ///继续动画
+    /// 继续动画
     public func playScan() {
         guard layer.speed == 0 && !isCompletion else {
             return
