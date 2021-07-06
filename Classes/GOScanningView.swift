@@ -1,13 +1,13 @@
 //
-//  SPScanningView.swift
-//  SPScanningView
+//  GOScanningView.swift
+//  GOScanningView
 //
 //  Created by 高文立 on 2020/7/16.
 //
 
 import UIKit
 
-public enum SPScanSpeedType: Int {
+public enum GOScanSpeedType: Int {
     ///匀速
     case linear
     ///加速
@@ -20,7 +20,7 @@ public enum SPScanSpeedType: Int {
     case easeInEaseOutReverse
 }
 
-public enum SPScanModeType: Int {
+public enum GOScanModeType: Int {
     ///上->下
     case upDown
     ///下->上
@@ -31,20 +31,15 @@ public enum SPScanModeType: Int {
     case rightLeft
 }
 
-public protocol SPScanningViewDelegate: NSObjectProtocol {
-    func didCompletion(view: SPScanningView, isReversed: Bool)
-    func didChangeValue(view: SPScanningView, value: CGFloat)
-    func didNoteValue(view: SPScanningView, value: CGFloat)
-}
-public extension SPScanningViewDelegate {
-    func didCompletion(view: SPScanningView, isReversed: Bool) { }
-    func didChangeValue(view: SPScanningView, value: CGFloat) { }
-    func didNoteValue(view: SPScanningView, value: CGFloat) { }
+@objc public protocol GOScanningViewDelegate: NSObjectProtocol {
+    @objc optional func didCompletion(view: GOScanningView, isReversed: Bool)
+    @objc optional func didChangeValue(view: GOScanningView, value: CGFloat)
+    @objc optional func didNoteValue(view: GOScanningView, value: CGFloat)
 }
 
-public class SPScanningView: UIView {
+@objcMembers public class GOScanningView: UIView {
     
-    weak open var delegate: SPScanningViewDelegate?
+    weak open var delegate: GOScanningViewDelegate?
     
     ///循环裁剪时每次赋值刷新
     public var refreshImage: UIImage? {
@@ -84,8 +79,8 @@ public class SPScanningView: UIView {
     
     private var fromValue: CGFloat = 0
     private var toValue: CGFloat = 0
-    private var speedType: SPScanSpeedType = .linear
-    private var modeType: SPScanModeType = .upDown
+    private var speedType: GOScanSpeedType = .linear
+    private var modeType: GOScanModeType = .upDown
     private var isReversed = false
     private var speedTypeMiddleValue: CGFloat = 0
     private var isClip: Bool = false
@@ -110,7 +105,7 @@ public class SPScanningView: UIView {
     ///   - duration: 扫描时间，默认1.5
     ///   - middleValue: 仅 ScanSpeedType 为 easeInEaseOut 或 easeInEaseOutReverse 时生效。默认中间位置
     ///   - noteValue: 预设通知值 0~1。扫描位置达到预设值时执行代理didNoteValue
-    public init(frame: CGRect, isCycle: Bool = true, modeType: SPScanModeType = .upDown, speedType: SPScanSpeedType = .linear, gradientImage: UIImage = UIImage(), originalImage: UIImage = UIImage(), clipImage: UIImage = UIImage(), gradientSize: CGFloat = 5, duration: CGFloat = 1.5, middleValue: CGFloat = 0, noteValue: CGFloat = 1) {
+    public init(frame: CGRect, isCycle: Bool = true, modeType: GOScanModeType = .upDown, speedType: GOScanSpeedType = .linear, gradientImage: UIImage = UIImage(), originalImage: UIImage = UIImage(), clipImage: UIImage = UIImage(), gradientSize: CGFloat = 5, duration: CGFloat = 1.5, middleValue: CGFloat = 0, noteValue: CGFloat = 1) {
         super.init(frame: frame)
         
         layer.masksToBounds = true
@@ -168,7 +163,7 @@ public class SPScanningView: UIView {
 }
 
 // MARK: - scan
-extension SPScanningView {
+extension GOScanningView {
     
     /// 开始动画
     /// - Parameter isClip: 是否裁剪。裁剪现仅支持 linear 状态
@@ -224,7 +219,7 @@ extension SPScanningView {
     }
 }
 
-extension SPScanningView {
+extension GOScanningView {
     
     private func startScan(_ from: CGFloat, _ to: CGFloat) {
         
@@ -262,16 +257,16 @@ extension SPScanningView {
             note = noteValue * bounds.width
         }
         
-        delegate?.didChangeValue(view: self, value: value)
+        delegate?.didChangeValue?(view: self, value: value)
         
         if modeType == .upDown || modeType == .leftRight {
             if value >= note {
-                delegate?.didNoteValue(view: self, value: note)
+                delegate?.didNoteValue?(view: self, value: note)
                 presentationLink?.invalidate()
             }
         } else if modeType == .downUp || modeType == .rightLeft {
             if value <= note {
-                delegate?.didNoteValue(view: self, value: note)
+                delegate?.didNoteValue?(view: self, value: note)
                 presentationLink?.invalidate()
             }
         }
@@ -279,7 +274,7 @@ extension SPScanningView {
 }
 
 // MARK:  - clip
-extension SPScanningView {
+extension GOScanningView {
     
     private func startClip() {
         
@@ -416,7 +411,7 @@ extension SPScanningView {
 }
 
 // MARK: - CAAnimationDelegate
-extension SPScanningView: CAAnimationDelegate {
+extension GOScanningView: CAAnimationDelegate {
     
     public func animationDidStop(_ anim: CAAnimation, finished flag: Bool) {
         
@@ -430,7 +425,7 @@ extension SPScanningView: CAAnimationDelegate {
             clipImageView.image = originalImageView.image
         }
         
-        delegate?.didCompletion(view: self, isReversed: isReversed)
+        delegate?.didCompletion?(view: self, isReversed: isReversed)
         
         guard isCycle else {
             stopScan()
@@ -462,7 +457,7 @@ extension SPScanningView: CAAnimationDelegate {
 }
 
 // MARK: - scan
-extension SPScanningView {
+extension GOScanningView {
     
     ///加速
     private func easeInPath(_ path: CGMutablePath, _ from: CGFloat, _ to: CGFloat) {
@@ -587,7 +582,7 @@ extension SPScanningView {
     }
 }
 
-extension SPScanningView {
+extension GOScanningView {
     
     private func getValues(min: CGFloat, max: CGFloat, isIncreasing: Bool = true, isReversed: Bool = false, temp: CGFloat = 1) -> [CGFloat] {
         

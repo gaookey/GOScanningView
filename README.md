@@ -1,8 +1,8 @@
-# SPScanningView
+# GOScanningView
 
 ### 扫描 裁剪
 
-### 
+
 ### 部分属性和方法
 
 
@@ -23,7 +23,7 @@
 ///   - duration: 扫描时间，默认1.5
 ///   - middleValue: 仅 ScanSpeedType 为 easeInEaseOut 或 easeInEaseOutReverse 时生效。默认中间位置
 ///   - noteValue: 预设通知值 0~1。扫描位置达到预设值时执行代理didNoteValue
-public init(frame: CGRect, isCycle: Bool = true, modeType: SPScanModeType = .upDown, speedType: SPScanSpeedType = .linear, gradientImage: UIImage = UIImage(), originalImage: UIImage = UIImage(), clipImage: UIImage = UIImage(), gradientSize: CGFloat = 5, duration: CGFloat = 1.5, middleValue: CGFloat = 0, noteValue: CGFloat = 1) 
+public init(frame: CGRect, isCycle: Bool = true, modeType: GOScanModeType = .upDown, speedType: GOScanSpeedType = .linear, gradientImage: UIImage = UIImage(), originalImage: UIImage = UIImage(), clipImage: UIImage = UIImage(), gradientSize: CGFloat = 5, duration: CGFloat = 1.5, middleValue: CGFloat = 0, noteValue: CGFloat = 1)
 ```
 
 
@@ -88,7 +88,7 @@ public func playScan()
 `easeInEaseOut` 和 `easeInEaseOutReverse` 两种变速可以通过设置 `middleValue` 调整变速位置。默认中间位置
 
 ```swift
-public enum SPScanSpeedType: Int {
+public enum GOScanSpeedType: Int {
     ///匀速
     case linear
     ///加速
@@ -107,7 +107,7 @@ public enum SPScanSpeedType: Int {
 扫描方向。默认 `upDown`
 
 ```swift
-public enum SPScanModeType: Int {
+public enum GOScanModeType: Int {
     ///上->下
     case upDown
     ///下->上
@@ -123,14 +123,13 @@ public enum SPScanModeType: Int {
 
 ##### 代理
 
-`SPScanningViewDelegate`
+`GOScanningViewDelegate`
 
 
 
 ```swift
-func didCompletion(view: SPScanningView, isReversed: Bool)
-func didChangeValue(view: SPScanningView, value: CGFloat)
-// noteValue: 预设通知值 0~1。扫描位置达到预设值时执行代理didNoteValue
-func didNoteValue(view: SPScanningView, value: CGFloat)
+    @objc optional func didCompletion(view: GOScanningView, isReversed: Bool)
+    @objc optional func didChangeValue(view: GOScanningView, value: CGFloat)
+    @objc optional func didNoteValue(view: GOScanningView, value: CGFloat)
 ```
 
